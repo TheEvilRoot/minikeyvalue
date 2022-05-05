@@ -2,11 +2,12 @@
 #trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 kill $(pgrep -f nginx)
 
-PORT=3001 ./volume /tmp/volume1/ &
-PORT=3002 ./volume /tmp/volume2/ &
-PORT=3003 ./volume /tmp/volume3/ &
-PORT=3004 ./volume /tmp/volume4/ &
-PORT=3005 ./volume /tmp/volume5/ &
+PORT=3001 ./volume /data/volume1/ &
+PORT=3002 ./volume /data/volume2/ &
+PORT=3003 ./volume /data/volume3/ &
+PORT=3004 ./volume /data/volume4/ &
+PORT=3005 ./volume /data/volume5/ &
 
-./mkv -port 3000 -volumes localhost:3001,localhost:3002,localhost:3003,localhost:3004,localhost:3005 -db /tmp/indexdb/ server
+HOSTNAME=$(hostname)
+./mkv -port 3000 -volumes ${HOSTNAME}:3001,${HOSTNAME}:3002,${HOSTNAME}:3003,${HOSTNAME}:3004,${HOSTNAME}:3005 -db /data/indexdb/ server
 

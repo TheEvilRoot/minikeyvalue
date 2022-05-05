@@ -16,7 +16,8 @@ RUN apt-get update && \
     golang \
     git && \
   apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+  mkdir /data/
 
 WORKDIR /
 ENV GOPATH /go
@@ -28,4 +29,6 @@ RUN pip3 install --no-cache-dir -r mkv/requirements.txt
 COPY mkv volume mkv/
 COPY src/*.go mkv/src/
 COPY tools/* mkv/tools/
+COPY go.mod /mkv/
 WORKDIR /mkv
+CMD ["tools/bringup.sh"]
