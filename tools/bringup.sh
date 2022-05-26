@@ -8,6 +8,7 @@ PORT=3003 ./volume /data/volume3/ &
 PORT=3004 ./volume /data/volume4/ &
 PORT=3005 ./volume /data/volume5/ &
 
-HOSTNAME=$(hostname)
+MACHINE_NAME=$(hostname)
+HOSTNAME=${HOSTNAME:-"$MACINE_NAME"}
 ./mkv -port 3000 -volumes ${HOSTNAME}:3001,${HOSTNAME}:3002,${HOSTNAME}:3003,${HOSTNAME}:3004,${HOSTNAME}:3005 -db /data/indexdb/ server
 
