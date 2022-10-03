@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
@@ -73,7 +72,7 @@ func key2path(key []byte) string {
 
 type sortvol struct {
 	score  []byte
-	volume string
+	volume VolumeInfo
 }
 type byScore []sortvol
 
@@ -83,7 +82,7 @@ func (s byScore) Less(i, j int) bool {
 	return bytes.Compare(s[i].score, s[j].score) == 1
 }
 
-func key2volume(key []byte, volumes []string, count int, svcount int) []string {
+func key2volume(key []byte, volumes []VolumeInfo, count int, svcount int) []string {
 	// this is an intelligent way to pick the volume server for a file
 	// stable in the volume server name (not position!)
 	// and if more are added the correct portion will move (yay md5!)
@@ -91,7 +90,7 @@ func key2volume(key []byte, volumes []string, count int, svcount int) []string {
 	for _, v := range volumes {
 		hash := md5.New()
 		hash.Write(key)
-		hash.Write([]byte(v))
+		hash.Write([]byte(v.id))
 		score := hash.Sum(nil)
 		sortvols = append(sortvols, sortvol{score, v})
 	}
@@ -104,13 +103,13 @@ func key2volume(key []byte, volumes []string, count int, svcount int) []string {
 		var volume string
 		if svcount == 1 {
 			// if it's one, don't use the path structure for it
-			volume = sv.volume
+			volume = sv.volume.url
 		} else {
 			// use the least significant compare dword for the subvolume
 			// using only a byte would cause potential imbalance
 			svhash := uint(sv.score[12])<<24 + uint(sv.score[13])<<16 +
 				uint(sv.score[14])<<8 + uint(sv.score[15])
-			volume = fmt.Sprintf("%s/sv%02X", sv.volume, svhash%uint(svcount))
+			volume = fmt.Sprintf("%s/sv%02X", sv.volume.url, svhash%uint(svcount))
 		}
 		ret = append(ret, volume)
 	}
@@ -174,7 +173,7 @@ func remote_get(remote string) (string, error) {
 	if resp.StatusCode != 200 {
 		return "", errors.New(fmt.Sprintf("remote_get: wrong status code %d", resp.StatusCode))
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -194,4 +193,8 @@ func remote_head(remote string, timeout time.Duration) (bool, error) {
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == 200, nil
+}
+
+func keyToVolumeUrl(volume string, key any) string {
+	return fmt.Sprintf("http://%s/s/%s", volume, key)
 }

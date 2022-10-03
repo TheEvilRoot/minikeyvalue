@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -31,4 +31,3 @@ COPY src/*.go mkv/src/
 COPY tools/* mkv/tools/
 COPY go.mod /mkv/
 WORKDIR /mkv
-CMD ["tools/bringup.sh"]

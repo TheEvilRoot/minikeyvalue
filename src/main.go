@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -16,6 +16,11 @@ import (
 
 // *** App struct and methods ***
 
+type VolumeInfo struct {
+	url string
+	id string
+}
+
 type App struct {
 	db    *leveldb.DB
 	mlock sync.Mutex
@@ -23,7 +28,7 @@ type App struct {
 
 	// params
 	uploadids  map[string]bool
-	volumes    []string
+	volumes    []VolumeInfo
 	fallback   string
 	replicas   int
 	subvolumes int
@@ -61,6 +66,25 @@ func (a *App) PutRecord(key []byte, rec Record) bool {
 	return a.db.Put(key, fromRecord(rec), nil) == nil
 }
 
+func makeVolumes(csl string) []VolumeInfo {
+	volumes := strings.Split(csl, ",")
+	infos := []VolumeInfo{}
+	for _, volume := range volumes {
+		fmt.Printf("probe %s", volume)
+		body, err := remote_get(fmt.Sprintf("http://%s/id", volume))
+		if err != nil {
+			panic(fmt.Sprintf("probe %s finished with error %s", volume, err))
+		}
+		if len(body) == 0 {
+			panic(fmt.Sprintf("probe %s finished with empty reply", volume))
+		}
+		volumeId := strings.TrimSpace(body)
+		fmt.Printf("probe %s finished, id = %s", volume, volumeId)
+		infos = append(infos, VolumeInfo{volume, volumeId})
+	}
+	return infos
+}
+
 // *** Entry Point ***
 
 func main() {
@@ -79,7 +103,7 @@ func main() {
 	voltimeout := flag.Duration("voltimeout", 1*time.Second, "Volume servers must respond to GET/HEAD requests in this amount of time or they are considered down, as duration")
 	flag.Parse()
 
-	volumes := strings.Split(*pvolumes, ",")
+	volumes := makeVolumes(*pvolumes)
 	command := flag.Arg(0)
 
 	if command != "server" && command != "rebuild" && command != "rebalance" {
@@ -89,7 +113,7 @@ func main() {
 	}
 
 	if !*verbose {
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 	} else {
 		log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 	}

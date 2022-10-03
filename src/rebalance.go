@@ -19,7 +19,7 @@ func rebalance(a *App, req RebalanceRequest) bool {
 	// find the volumes that are real
 	rvolumes := make([]string, 0)
 	for _, rv := range req.volumes {
-		remote_test := fmt.Sprintf("http://%s%s", rv, kp)
+		remote_test := fmt.Sprintf(keyToVolumeUrl(rv, kp))
 		found, err := remote_head(remote_test, 1*time.Minute)
 		if err != nil {
 			fmt.Println("rebalance head error", err, remote_test)
@@ -46,7 +46,7 @@ func rebalance(a *App, req RebalanceRequest) bool {
 	var err error = nil
 	var ss string
 	for _, v := range rvolumes {
-		remote_from := fmt.Sprintf("http://%s%s", v, kp)
+		remote_from := keyToVolumeUrl(v, kp)
 
 		// read
 		ss, err = remote_get(remote_from)
@@ -72,7 +72,7 @@ func rebalance(a *App, req RebalanceRequest) bool {
 			}
 		}
 		if needs_write {
-			remote_to := fmt.Sprintf("http://%s%s", v, kp)
+			remote_to := keyToVolumeUrl(v, kp)
 			// write
 			if err := remote_put(remote_to, int64(len(ss)), strings.NewReader(ss)); err != nil {
 				fmt.Println("rebalance put error", err, remote_to)
@@ -101,7 +101,7 @@ func rebalance(a *App, req RebalanceRequest) bool {
 			}
 		}
 		if needs_delete {
-			remote_del := fmt.Sprintf("http://%s%s", v2, kp)
+			remote_del := keyToVolumeUrl(v2, kp)
 			if err := remote_delete(remote_del); err != nil {
 				fmt.Println("rebalance delete error", err, remote_del)
 				delete_error = true

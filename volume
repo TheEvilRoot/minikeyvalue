@@ -41,7 +41,11 @@ http {
 
   server {
     listen $PORT default_server backlog=4096;
-    location / {
+    location /id {
+      add_header Content-Type text/plain;
+      return 200 '$VOLUME_ID';
+    }
+    location /s/ {
       root $VOLUME;
       disable_symlinks off;
 

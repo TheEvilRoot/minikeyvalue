@@ -158,7 +158,7 @@ func (a *App) WriteToReplicas(key []byte, value io.Reader, valuelen int64) int {
 			// if we have already read the contents into the TeeReader
 			body = bytes.NewReader(buf.Bytes())
 		}
-		remote := fmt.Sprintf("http://%s%s", kvolumes[i], key2path(key))
+		remote := fmt.Sprintf(keyToVolumeUrl(kvolumes[i], key2path(key)))
 		if remote_put(remote, valuelen, body) != nil {
 			// we assume the remote wrote nothing if it failed
 			fmt.Printf("replica %d write failed: %s\n", i, remote)
@@ -219,7 +219,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// fall through to fallback
-			remote = fmt.Sprintf("http://%s%s", a.fallback, key)
+			remote = keyToVolumeUrl(a.fallback, key)
 		} else {
 			kvolumes := key2volume(key, a.volumes, a.replicas, a.subvolumes)
 			if needs_rebalance(rec.rvolumes, kvolumes) {
@@ -233,7 +233,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// check the volume servers in a random order
 			good := false
 			for _, vn := range rand.Perm(len(rec.rvolumes)) {
-				remote = fmt.Sprintf("http://%s%s", rec.rvolumes[vn], key2path(key))
+				remote = keyToVolumeUrl(rec.rvolumes[vn], key2path(key))
 				found, _ := remote_head(remote, a.voltimeout)
 				if found {
 					good = true
